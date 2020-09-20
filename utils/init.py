@@ -14,13 +14,14 @@
 
 from __future__ import print_function
 from requests_oauthlib import OAuth2Session
+from decouple import config
+
 import os
 import pickle
-import json
 
 # env variables
-CLIENT_ID = os.getenv('CLIENT_ID')
-CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+CLIENT_ID = config('CLIENT_ID')
+CLIENT_SECRET = config('CLIENT_SECRET')
 
 # If modifying these scopes, delete the file hstoken.pickle.
 SCOPES = ['contacts']
@@ -29,7 +30,7 @@ SCOPES = ['contacts']
 # ==== QuickStart Command-line App
 
 
-def main():
+def initHubspotClient():
     """
     Connects your app a Hub, then fetches the first Contact in the CRM.
     Note: If you want to change hubs or scopes, delete the `hstoken.pickle` file and rerun.
@@ -62,20 +63,11 @@ def main():
         token_updater=SaveTokenToFile
     )
 
-    # Call the 'Get all contacts' API endpoint
-    response = hubspot.get(
-        'https://api.hubapi.com/contacts/v1/lists/all/contacts/all',
-        params={'count': 1}  # Return only 1 result -- for demo purposes
-    )
-
-    # Pretty-print our API result to console
-    print('Here is one Contact Record from your CRM:')
-    print('-----------------------------------------')
-    print(json.dumps(response.json(), indent=2, sort_keys=True))
-
+    return hubspot
 
 # ===================================================================
 # ==== Supporting Functions and Classes used by the command-line app.
+
 
 def InstallAppAndCreateToken(config, port=0):
     """
@@ -146,7 +138,3 @@ def SaveTokenToFile(token):
     """
     with open('hstoken.pickle', 'wb') as tokenfile:
         pickle.dump(token, tokenfile)
-
-
-if __name__ == '__main__':
-    main()
