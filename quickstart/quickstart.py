@@ -13,20 +13,21 @@
 # limitations under the License.
 
 from __future__ import print_function
-from requests_oauthlib import OAuth2Session  
+from requests_oauthlib import OAuth2Session
 import os
 import pickle
 import json
 
-# Replace with your App's Client ID and Secret
-CLIENT_ID     = 'your-app-client-id'
-CLIENT_SECRET = 'your-app-client-secret'
+# env variables
+CLIENT_ID = os.getenv('CLIENT_ID')
+CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 
 # If modifying these scopes, delete the file hstoken.pickle.
-SCOPES        = ['contacts']
+SCOPES = ['contacts']
 
-#================================================================
-#==== QuickStart Command-line App
+# ================================================================
+# ==== QuickStart Command-line App
+
 
 def main():
     """
@@ -44,7 +45,7 @@ def main():
     # The file hstoken.pickle stores the app's access and refresh tokens for the hub you connect to.
     # It is created automatically when the authorization flow completes for the first time.
     if os.path.exists('hstoken.pickle'):
-        with open('hstoken.pickle','rb') as tokenfile:
+        with open('hstoken.pickle', 'rb') as tokenfile:
             token = pickle.load(tokenfile)
     # If no token file is found, let the user log in (and install the app if needed)
     else:
@@ -54,40 +55,42 @@ def main():
 
     # Create an OAuth session using your app_config and token
     hubspot = OAuth2Session(
-        app_config['client_id'], 
-        token=token, 
+        app_config['client_id'],
+        token=token,
         auto_refresh_url=app_config['token_uri'],
-        auto_refresh_kwargs=app_config, 
+        auto_refresh_kwargs=app_config,
         token_updater=SaveTokenToFile
     )
 
     # Call the 'Get all contacts' API endpoint
     response = hubspot.get(
-            'https://api.hubapi.com/contacts/v1/lists/all/contacts/all', 
-            params={ 'count': 1 } # Return only 1 result -- for demo purposes
-        )
+        'https://api.hubapi.com/contacts/v1/lists/all/contacts/all',
+        params={'count': 1}  # Return only 1 result -- for demo purposes
+    )
 
     # Pretty-print our API result to console
     print('Here is one Contact Record from your CRM:')
     print('-----------------------------------------')
     print(json.dumps(response.json(), indent=2, sort_keys=True))
 
-    
-#===================================================================
-#==== Supporting Functions and Classes used by the command-line app. 
+
+# ===================================================================
+# ==== Supporting Functions and Classes used by the command-line app.
 
 def InstallAppAndCreateToken(config, port=0):
     """
     Creates a simple local web app+server to authorize your app with a HubSpot hub.
     Returns the refresh and access token.
-    """  
+    """
     from wsgiref import simple_server
     import webbrowser
 
     local_webapp = SimpleAuthCallbackApp()
-    local_webserver = simple_server.make_server(host='localhost', port=port, app=local_webapp)
+    local_webserver = simple_server.make_server(
+        host='localhost', port=port, app=local_webapp)
 
-    redirect_uri = 'http://{}:{}/'.format('localhost', local_webserver.server_port)
+    redirect_uri = 'http://{}:{}/'.format('localhost',
+                                          local_webserver.server_port)
 
     oauth = OAuth2Session(
         client_id=config['client_id'],
@@ -96,15 +99,15 @@ def InstallAppAndCreateToken(config, port=0):
     )
 
     auth_url, _ = oauth.authorization_url(config['auth_uri'])
-    
+
     print('-- Authorizing your app via Browser --')
     print('If your browser does not open automatically, visit this URL:')
     print(auth_url)
     webbrowser.open(auth_url, new=1, autoraise=True)
     local_webserver.handle_request()
 
-    # Https required by requests_oauthlib 
-    auth_response = local_webapp.request_uri.replace('http','https')
+    # Https required by requests_oauthlib
+    auth_response = local_webapp.request_uri.replace('http', 'https')
 
     token = oauth.fetch_token(
         config['token_uri'],
@@ -115,24 +118,27 @@ def InstallAppAndCreateToken(config, port=0):
     )
     return token
 
+
 class SimpleAuthCallbackApp(object):
     """
     Used by our simple server to receive and 
     save the callback data authorization.
     """
+
     def __init__(self):
         self.request_uri = None
         self._success_message = (
-            'All set! Your app is authorized.  ' + 
+            'All set! Your app is authorized.  ' +
             'You can close this window now and go back where you started from.'
         )
 
     def __call__(self, environ, start_response):
         from wsgiref.util import request_uri
-        
+
         start_response('200 OK', [('Content-type', 'text/plain')])
         self.request_uri = request_uri(environ)
         return [self._success_message.encode('utf-8')]
+
 
 def SaveTokenToFile(token):
     """
@@ -140,6 +146,7 @@ def SaveTokenToFile(token):
     """
     with open('hstoken.pickle', 'wb') as tokenfile:
         pickle.dump(token, tokenfile)
-        
+
+
 if __name__ == '__main__':
     main()
