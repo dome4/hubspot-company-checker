@@ -1,4 +1,5 @@
 import json
+import io
 from prettytable import PrettyTable
 
 from utils import init
@@ -7,9 +8,14 @@ from utils import init
 def main():
     hubspotClient = init.initHubspotClient()
 
-    companies = [
-        's'
-    ]
+    # seach queries
+    companies = []
+
+    # read data from file
+    file1 = io.open("input.txt", mode="r", encoding="utf-8")
+    lines = file1.readlines()
+    for line in lines:
+        companies.append(line)
 
     for company in companies:
         checkCompany(hubspotClient, company)
